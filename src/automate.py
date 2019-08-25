@@ -25,10 +25,6 @@ def checkPageTitle(title):
 	
 	print(title + " passed validation ")
 
-
-def get_rows():
-	return browser.find_elements_by_css_selector("#tsWht")
-
 print("start: ")
 f = open('loginInfo.json', 'r')
 info = json.load(f)
