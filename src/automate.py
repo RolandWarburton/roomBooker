@@ -94,7 +94,7 @@ def getBookings():
 						return times
 					times = []
 		# if that day returned no booking slots then go to the next day
-		if len(timeslots) == 0:
+		if len(times) == 0:
 			waitUntilXpathElementLoaded("//a[@title = 'Next']")
 			nextButton = browser.find_element_by_xpath("//a[@title = 'Next']")
 			nextButton.click()
@@ -168,7 +168,9 @@ element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/sele
 
 # select the last time from the dropdown
 options = Select(element)
-options.select_by_index(len(timeslots) - 1)
+print(timeslots)
+# NOTE TO SELF: -3 needs testing. dont thing its reliable.
+options.select_by_index(len(timeslots) - 3)
 
 # find and click the submit button
 submitBtn = browser.find_element_by_xpath("//input[@id = 'submitButton']")
