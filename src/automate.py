@@ -61,23 +61,31 @@ def getRooms():
 	rooms = [room1, room2, room3, room4, room5]
 	return rooms
 
+# returns booking times in an array and appends the room number on the end
 def getBookings():
 	times = []
-	timeslots = []
-
+	# timeslots = []
+	
+	# iterate through each day
 	for i in range(6):
-		print("DAY: " + str(i+1))
+		print("DAY: " + str(i + 1))
 		rooms = getRooms()
+
+		# for each room (room1, room2...)
 		for i, room in enumerate(rooms):
 			print("room: " + str(i))
+
+			# for each cell/timeslot for that row/room
 			for timeslot in room:
+				# process the alt text to determine if its booked or not
 				col = timeslot.get_attribute('alt').split(" ")
 				if len(col) == 3:
 					timeparts = col[0].split(":")
 					if int(timeparts[0]) > firstSuitableBookTime and int(timeparts[0]) < lastSuitableBookTime:
 						times.append(col[0])
 				else:
-					if len(times) >= 2:
+					# change this number if you want to do smaller or bigger room bookings 
+					if len(times) >= 8:
 						# will change this later to add options for picking times?
 						# timeslots.append(times)
 
@@ -85,86 +93,83 @@ def getBookings():
 						times.append(1434+i)
 						return times
 					times = []
+		# if that day returned no booking slots then go to the next day
 		if len(timeslots) == 0:
 			waitUntilXpathElementLoaded("//a[@title = 'Next']")
 			nextButton = browser.find_element_by_xpath("//a[@title = 'Next']")
 			nextButton.click()
 		else:
-			break	
-	return timeslots
+			break
+	# fallback
+	return times
 
 
-print("start: ")
+print("running Auto Booker...")
+# hours in which to book a room
+firstSuitableBookTime = 10
+lastSuitableBookTime = 17
+
+# login with provided details
 f = open('loginInfo.json', 'r')
 info = json.load(f)
 login = info['login']
 secret = info['secret']
 f.close()
 
+# open login page
 browser = webdriver.Chrome()
 browser.get("https://pcbooking.swin.edu.au/cire/login.aspx?ViewSimpleMode=false")
 
-
-
+# login username
 username = browser.find_element_by_id("username")
 username.clear()
 username.send_keys(login)
 
+# login password
 password = browser.find_element_by_id("password")
 password.clear()
 password.send_keys(secret)
 
 browser.find_element_by_id("signInButton").click()
 
+# verify we landed on the desktop page
 checkPageTitle("Room and PC Booking")
 waitUntilElementLoaded("locationTable")
 
 
 print("attempting to extract booking data")
-
-
-
-firstSuitableBookTime = 10
-lastSuitableBookTime = 17
-# def satisfyTime(time1, time2, length):
-# 	print(time1 + "\n")
-# 	print(time2 + "\n")
-# 	return False
+# get a period of appropriate bookings
 timeslots = getBookings()
 
+# get the room number off the end of the array then discard it
 print("TIMESLOTS: " + str(timeslots))
 roomNum = timeslots[-1]
-# take the room number off the array
 timeslots.pop()
+
+# figure out the range of the booking for targeting the box to click on
 query = str(timeslots[0]) + " to " + str(timeslots[1])
 print("QUERY: " + query)
-element = browser.find_element_by_xpath(
-	"//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
 
-# contpayment = WebDriverWait(browser, 10).until(
-#     EC.presence_of_element_located((By.XPATH, "//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")))
+# get the box to click on
+element = browser.find_element_by_xpath("//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
 
+# might need to scroll into view so it can be clicked on
 actions = ActionChains(browser)
 actions.move_to_element(element).perform()
 element.location_once_scrolled_into_view
 
 element.click()
-# waitUntilXpathElementLoaded("//select[@name='EndTime']")
-# waitUntilIDLoaded("EndTime")
 
-# s = browser.find_element_by_css_selector("#ui-datepicker-div")
-# browser.execute_script("document.getElementById('Dim').style.display = 'none';")
-# browser.execute_script("document.getElementById('dialog0').style.display = 'fixed';")
-# # browser.execute_script("document.getElementById('dialog0').style.position = 'relative';")
-# browser.execute_script("document.getElementById('dialog0').style.x = '0px';")
-# browser.execute_script("document.getElementById('dialog0').style.y = '0px';")
-# s.send_keys(Keys.TAB)
-
+# wait a little while cos the floating book window is a little weird sometimes 
 browser.implicitly_wait(10)
+
+# get the end time field
 element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']")
 
+# select the last time from the dropdown
 options = Select(element)
 options.select_by_index(len(timeslots) - 1)
 
+# find and click the submit button
 submitBtn = browser.find_element_by_xpath("//input[@id = 'submitButton']")
 submitBtn.click()
