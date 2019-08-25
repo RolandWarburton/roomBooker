@@ -162,9 +162,9 @@ element.click()
 
 browser.implicitly_wait(10)
 element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']")
-print(element.text)
 
-# s1 = Select(browser.find_element_by_id("EndTime"))
-# print("options")
-# print(s1.options)
-# s1.select_by_visible_text(str(timeslots[-1]))
+options = Select(element)
+options.select_by_index(len(timeslots) - 1)
+
+submitBtn = browser.find_element_by_xpath("//input[@id = 'submitButton']")
+submitBtn.click()
