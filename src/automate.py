@@ -2,6 +2,12 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+# scrolling
+from selenium.webdriver.common.action_chains import ActionChains
+# dropdowns
+from selenium.webdriver.support.ui import Select
+# keyboard things
+from selenium.webdriver.common.keys import Keys
 import os
 import json
 
@@ -71,9 +77,13 @@ def getBookings():
 					if int(timeparts[0]) > firstSuitableBookTime and int(timeparts[0]) < lastSuitableBookTime:
 						times.append(col[0])
 				else:
-					if len(times) >= 8:
-						timeslots.append(times)
-						return timeslots
+					if len(times) >= 2:
+						# will change this later to add options for picking times?
+						# timeslots.append(times)
+
+						# add the room number
+						times.append(1434+i)
+						return times
 					times = []
 		if len(timeslots) == 0:
 			waitUntilXpathElementLoaded("//a[@title = 'Next']")
@@ -114,7 +124,7 @@ print("attempting to extract booking data")
 
 
 
-firstSuitableBookTime = 9
+firstSuitableBookTime = 10
 lastSuitableBookTime = 17
 # def satisfyTime(time1, time2, length):
 # 	print(time1 + "\n")
@@ -122,6 +132,39 @@ lastSuitableBookTime = 17
 # 	return False
 timeslots = getBookings()
 
-
-
 print("TIMESLOTS: " + str(timeslots))
+roomNum = timeslots[-1]
+# take the room number off the array
+timeslots.pop()
+query = str(timeslots[0]) + " to " + str(timeslots[1])
+print("QUERY: " + query)
+element = browser.find_element_by_xpath(
+	"//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
+
+# contpayment = WebDriverWait(browser, 10).until(
+#     EC.presence_of_element_located((By.XPATH, "//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")))
+
+actions = ActionChains(browser)
+actions.move_to_element(element).perform()
+element.location_once_scrolled_into_view
+
+element.click()
+# waitUntilXpathElementLoaded("//select[@name='EndTime']")
+# waitUntilIDLoaded("EndTime")
+
+# s = browser.find_element_by_css_selector("#ui-datepicker-div")
+# browser.execute_script("document.getElementById('Dim').style.display = 'none';")
+# browser.execute_script("document.getElementById('dialog0').style.display = 'fixed';")
+# # browser.execute_script("document.getElementById('dialog0').style.position = 'relative';")
+# browser.execute_script("document.getElementById('dialog0').style.x = '0px';")
+# browser.execute_script("document.getElementById('dialog0').style.y = '0px';")
+# s.send_keys(Keys.TAB)
+
+browser.implicitly_wait(10)
+element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']")
+print(element.text)
+
+# s1 = Select(browser.find_element_by_id("EndTime"))
+# print("options")
+# print(s1.options)
+# s1.select_by_visible_text(str(timeslots[-1]))
