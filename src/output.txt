@@ -4,7 +4,7 @@ Elapsed from 04:00 to 04:30
 Elapsed from 04:30 to 06:30
 Elapsed from 06:30 to 10:00
 Elapsed from 10:00 to 12:00
-Reserved from 12:00 to 14:00
+Elapsed from 12:00 to 14:00
 Reserved from 14:00 to 16:00
 Reserved from 16:00 to 18:00
 18:00 to 18:15
