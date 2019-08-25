@@ -1,0 +1,28 @@
+<html>
+
+<head>
+
+	<title>Crunchify Login Page</title>
+	<script>
+		function loginForm() {
+			document.myform.submit();
+			document.myform.action = "https://www.swinburne.edu.au/library/study-spaces-computers/book/";
+		}
+	</script>
+	<style type="text/css">
+		body {
+			background-image: url('https://cdn.crunchify.com/bg.png');
+		}
+	</style>
+</head>
+
+<body onload="loginForm()">
+	<form action="https://pcbooking.swin.edu.au/MyPC/BookingGrid.htm" name="myform" method="get">
+		<input type="text" name="email" value="102106751@student.swin.edu.au">
+		<input type="password" name="password" value="Metrogamer123?">
+		<input type="submit" value="Login">
+	</form>
+
+</body>
+
+</html>

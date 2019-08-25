@@ -1,0 +1,27 @@
+Elapsed from 00:00 to 02:00
+Elapsed from 02:00 to 04:00
+Elapsed from 04:00 to 04:30
+Elapsed from 04:30 to 06:30
+Elapsed from 06:30 to 10:00
+Elapsed from 10:00 to 12:00
+Reserved from 12:00 to 14:00
+Reserved from 14:00 to 16:00
+Reserved from 16:00 to 18:00
+18:00 to 18:15
+18:15 to 18:30
+18:30 to 18:45
+18:45 to 19:00
+19:00 to 19:15
+19:15 to 19:30
+Reserved from 19:30 to 21:30
+21:30 to 21:45
+21:45 to 22:00
+22:00 to 22:15
+22:15 to 22:30
+22:30 to 22:45
+22:45 to 23:00
+23:00 to 23:15
+23:15 to 23:30
+23:30 to 23:45
+23:45 to 23:59
+Closed
