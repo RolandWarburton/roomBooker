@@ -169,8 +169,10 @@ element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/sele
 # select the last time from the dropdown
 options = Select(element)
 print(timeslots)
-# NOTE TO SELF: -3 needs testing. dont thing its reliable.
-options.select_by_index(len(timeslots) - 3)
+
+# select the last avaliable End Time slot on the booking window
+tmp = browser.find_elements_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']/option")
+options.select_by_index(len(tmp)-1)
 
 # find and click the submit button
 submitBtn = browser.find_element_by_xpath("//input[@id = 'submitButton']")
