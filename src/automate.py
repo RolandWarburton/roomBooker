@@ -8,6 +8,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select
 # keyboard things
 from selenium.webdriver.common.keys import Keys
+# for passing options into chromedriver
+from selenium.webdriver.chrome.options import Options
 import os
 import json
 
@@ -110,14 +112,23 @@ firstSuitableBookTime = 10
 lastSuitableBookTime = 17
 
 # login with provided details
-f = open('loginInfo.json', 'r')
+f = open('login.json', 'r')
 info = json.load(f)
 login = info['login']
 secret = info['secret']
 f.close()
 
+# for running headless
+options = Options()
+options.add_argument('--headless')
+options.add_argument('--disable-gpu')
+options.add_argument('--no-sandbox')
+options.add_argument('--window-size=1920,1080')
+
+browser = webdriver.Chrome(executable_path="/usr/lib/chromium-browser/chromedriver", chrome_options=options)
+browser.implicitly_wait(600)
+
 # open login page
-browser = webdriver.Chrome()
 browser.get("https://pcbooking.swin.edu.au/cire/login.aspx?ViewSimpleMode=false")
 
 # login username
@@ -151,29 +162,44 @@ query = str(timeslots[0]) + " to " + str(timeslots[1])
 print("QUERY: " + query)
 
 # get the box to click on
+print("get the row/box to click on")
 element = browser.find_element_by_xpath("//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
 
 # might need to scroll into view so it can be clicked on
+print("scroll into view")
 actions = ActionChains(browser)
 actions.move_to_element(element).perform()
 element.location_once_scrolled_into_view
 
+print("clicking on timeslot")
 element.click()
 
 # wait a little while cos the floating book window is a little weird sometimes 
+print("waiting 10ms")
 browser.implicitly_wait(10)
 
 # get the end time field
+print("finding endtime dropdown")
 element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']")
 
 # select the last time from the dropdown
+print("selecting options")
 options = Select(element)
-print(timeslots)
 
 # select the last avaliable End Time slot on the booking window
+print("getting list of options")
 tmp = browser.find_elements_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']/option")
-options.select_by_index(len(tmp)-1)
+print("selecting last booking time")
+options.select_by_index(len(tmp) - 1)
 
 # find and click the submit button
-submitBtn = browser.find_element_by_xpath("//input[@id = 'submitButton']")
+print("getting the submit button")
+browser.implicitly_wait(1000)
+wait = WebDriverWait(browser, 10)
+element = wait.until(EC.element_to_be_clickable((By.ID, 'submitButton')))
+waitUntilIDLoaded("submitButton")
+submitBtn = browser.find_element_by_id("submitButton")
+print("clicking the submit button")
 submitBtn.click()
+
+print("clicked book!")
