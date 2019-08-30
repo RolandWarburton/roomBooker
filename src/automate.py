@@ -117,6 +117,7 @@ info = json.load(f)
 login = info['login']
 secret = info['secret']
 f.close()
+f = open('log.txt', 'w')
 
 # for running headless
 options = Options()
@@ -129,49 +130,60 @@ browser = webdriver.Chrome(executable_path="/usr/lib/chromium-browser/chromedriv
 browser.implicitly_wait(600)
 
 # open login page
+f.write("open login page")
 browser.get("https://pcbooking.swin.edu.au/cire/login.aspx?ViewSimpleMode=false")
 
 # login username
+f.write("login username")
 username = browser.find_element_by_id("username")
 username.clear()
 username.send_keys(login)
 
 # login password
+f.write("login password")
 password = browser.find_element_by_id("password")
 password.clear()
 password.send_keys(secret)
 
+f.write("clicking sign in button")
 browser.find_element_by_id("signInButton").click()
 
 # verify we landed on the desktop page
 checkPageTitle("Room and PC Booking")
 waitUntilElementLoaded("locationTable")
+f.write("landed on booking table")
 
 
 print("attempting to extract booking data")
 # get a period of appropriate bookings
 timeslots = getBookings()
+f.write("got a period of bookings")
 
 # get the room number off the end of the array then discard it
 print("TIMESLOTS: " + str(timeslots))
+f.write("TIMESLOTS: " + str(timeslots))
 roomNum = timeslots[-1]
 timeslots.pop()
 
 # figure out the range of the booking for targeting the box to click on
 query = str(timeslots[0]) + " to " + str(timeslots[1])
+f.write("RANGE: " + query)
 print("QUERY: " + query)
 
 # get the box to click on
 print("get the row/box to click on")
 element = browser.find_element_by_xpath("//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
+f.write("got box to click on")
 
 # might need to scroll into view so it can be clicked on
 print("scroll into view")
+f.write("scrolling into view")
 actions = ActionChains(browser)
 actions.move_to_element(element).perform()
 element.location_once_scrolled_into_view
 
 print("clicking on timeslot")
+f.write("clicking on timeslot")
 element.click()
 
 # wait a little while cos the floating book window is a little weird sometimes 
@@ -180,26 +192,33 @@ browser.implicitly_wait(10)
 
 # get the end time field
 print("finding endtime dropdown")
+f.write("getting end time field")
 element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']")
 
 # select the last time from the dropdown
 print("selecting options")
+f.write("selecting options")
 options = Select(element)
 
 # select the last avaliable End Time slot on the booking window
 print("getting list of options")
+f.write("getting list of options")
 tmp = browser.find_elements_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']/option")
 print("selecting last booking time")
+f.write("selecting last booking time")
 options.select_by_index(len(tmp) - 1)
 
 # find and click the submit button
 print("getting the submit button")
+f.write("getting the submit button")
 browser.implicitly_wait(1000)
 wait = WebDriverWait(browser, 10)
 element = wait.until(EC.element_to_be_clickable((By.ID, 'submitButton')))
 waitUntilIDLoaded("submitButton")
 submitBtn = browser.find_element_by_id("submitButton")
+f.write("got the submit button")
 print("clicking the submit button")
 submitBtn.click()
+f.write("clicked book!")
 
 print("clicked book!")
