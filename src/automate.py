@@ -16,11 +16,10 @@ import json
 
 def waitUntilElementLoaded(element):
 	try:
-    		element = WebDriverWait(browser, 10).until(
-                    EC.presence_of_all_elements_located((By.CLASS_NAME, element))
-    	)
+		element = WebDriverWait(browser, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, element)))
+		return element
 	finally:
-    		browser.quit
+		browser.quit
 
 
 def waitUntilIDLoaded(element):
@@ -63,6 +62,19 @@ def getRooms():
 	rooms = [room1, room2, room3, room4, room5]
 	return rooms
 
+def getLoginDetails(path):
+	try:
+		info = json.load(open(path, 'r'))
+		f.close()
+		return[info['login'],info['secret']]
+	except:
+		print("failed to read info")
+
+def printAndLog(output, file):
+	file.write(output+"\n")
+	print(output)
+
+	
 # returns booking times in an array and appends the room number on the end
 def getBookings():
 	times = []
@@ -105,70 +117,71 @@ def getBookings():
 	# fallback
 	return times
 
+def fieldWrite(fieldID, keys):
+	field = browser.find_element_by_id(fieldID)
+	field.clear()
+	field.send_keys(keys)
+
 
 print("running Auto Booker...")
 # hours in which to book a room
 firstSuitableBookTime = 10
 lastSuitableBookTime = 17
 
+# open the log file for writing
+debugFile = open('log.txt', 'w')
+
 # login with provided details
-f = open('login.json', 'r')
-info = json.load(f)
-login = info['login']
-secret = info['secret']
-f.close()
-f = open('log.txt', 'w')
+info = getLoginDetails('/home/roland/projects/login.json')
+login = info[0], secret = info[1]
 
 # for running headless
 options = Options()
-options.add_argument('--headless')
-options.add_argument('--disable-gpu')
-options.add_argument('--no-sandbox')
-options.add_argument('--window-size=1920,1080')
+# options.add_argument('--headless')
+# options.add_argument('--disable-gpu')
+# options.add_argument('--no-sandbox')
+# options.add_argument('--window-size=1920,1080')
 
-browser = webdriver.Chrome(executable_path="/usr/lib/chromium-browser/chromedriver", chrome_options=options)
+browser = webdriver.Chrome(executable_path="webdriver/linux/chromedriver", options=options)
 browser.implicitly_wait(600)
 
 # open login page
-f.write("open login page\n")
+printAndLog("going to login page", debugFile)
 browser.get("https://pcbooking.swin.edu.au/cire/login.aspx?ViewSimpleMode=false")
 
-# login username
-f.write("login username\n")
-username = browser.find_element_by_id("username")
-username.clear()
-username.send_keys(login)
+# login
+printAndLog("writing username and secret", debugFile)
+fieldWrite("username", login)
+fieldWrite("password", secret)
 
-# login password
-f.write("login password\n")
-password = browser.find_element_by_id("password")
-password.clear()
-password.send_keys(secret)
-
-f.write("clicking sign in button\n")
-browser.find_element_by_id("signInButton").click()
+printAndLog("clicking sign in button", debugFile)
+waitUntilElementLoaded("signInButton").click()
 
 # verify we landed on the desktop page
-checkPageTitle("Room and PC Booking")
-waitUntilElementLoaded("locationTable")
-f.write("landed on booking table\n")
+try:
+	checkPageTitle("Room and PC Booking")
+	waitUntilElementLoaded("locationTable")
+	f.write("landed on booking table\n")
+except:
+	printAndLog("didnt land on the booking page", debugFile)
 
 
-print("attempting to extract booking data")
 # get a period of appropriate bookings
-timeslots = getBookings()
-f.write("got a period of bookings\n")
+printAndLog("attempting to extract booking data", debugFile)
+try:
+	timeslots = getBookings()
+except:
+	printAndLog("ERROR: didnt get any bookings!", debugFile)
 
 # get the room number off the end of the array then discard it
-print("TIMESLOTS: " + str(timeslots))
-f.write("TIMESLOTS: " + str(timeslots) + "\n")
 roomNum = timeslots[-1]
+printAndLog("Room number: " + roomNum, debugFile)
 timeslots.pop()
+printAndLog("Timeslots: " + str(timeslots), debugFile)
 
 # figure out the range of the booking for targeting the box to click on
 query = str(timeslots[0]) + " to " + str(timeslots[1])
-f.write("RANGE: " + query + "\n")
-print("QUERY: " + query)
+printAndLog(query, debugFile)
 
 # get the box to click on
 print("get the row/box to click on")
@@ -188,7 +201,7 @@ element.click()
 
 # wait a little while cos the floating book window is a little weird sometimes 
 print("waiting 10ms")
-browser.implicitly_wait(10)
+browser.implicitly_wait(100)
 
 # get the end time field
 print("finding endtime dropdown")
