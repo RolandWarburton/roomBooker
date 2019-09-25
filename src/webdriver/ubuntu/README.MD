@@ -1,0 +1,1 @@
+ubuntu uses chrome 76 and arch uses 77 so this is a downgraded version for ubuntu

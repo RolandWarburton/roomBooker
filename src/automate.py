@@ -16,30 +16,30 @@ import json
 
 def waitUntilElementLoaded(element):
 	try:
-		element = WebDriverWait(browser, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, element)))
+		WebDriverWait(browser, 10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, element)))
+		element = browser.find_element_by_class_name(element)
 		return element
-	finally:
-		browser.quit
+	except:
+		printAndLog("ERROR: timed out waiting for " + str(element), debugFile)
+
 
 
 def waitUntilIDLoaded(element):
 	try:
-    		element = WebDriverWait(browser, 10).until(
-                    EC.presence_of_all_elements_located(
-                    	(By.ID, element))
-                )
-	finally:
-    		browser.quit
+		wait.until(EC.presence_of_all_elements_located((By.ID, element)))
+		element = browser.find_element_by_id(element)
+		return element
+	except:
+		printAndLog("ERROR: timed out waiting for " + str(element), debugFile)
 
 
 def waitUntilXpathElementLoaded(path):
 	try:
-    		WebDriverWait(browser, 10).until(
-                    EC.presence_of_all_elements_located(
-                    	(By.XPATH, path))
-                )
-	finally:
-		browser.quit
+		wait.until(EC.presence_of_all_elements_located((By.XPATH, path)))
+		element = browser.find_element_by_xpath(path)
+		return element
+	except:
+		printAndLog("ERROR: timed out waiting for " + str(element), debugFile)
 
 
 def checkPageTitle(title):
@@ -65,10 +65,9 @@ def getRooms():
 def getLoginDetails(path):
 	try:
 		info = json.load(open(path, 'r'))
-		f.close()
-		return[info['login'],info['secret']]
+		return info['login'], info['secret']
 	except:
-		print("failed to read info")
+		printAndLog("failed to read info", debugFile)
 
 def printAndLog(output, file):
 	file.write(output+"\n")
@@ -78,8 +77,7 @@ def printAndLog(output, file):
 # returns booking times in an array and appends the room number on the end
 def getBookings():
 	times = []
-	# timeslots = []
-	
+
 	# iterate through each day
 	for i in range(6):
 		print("DAY: " + str(i + 1))
@@ -99,7 +97,7 @@ def getBookings():
 						times.append(col[0])
 				else:
 					# change this number if you want to do smaller or bigger room bookings 
-					if len(times) >= 8:
+					if len(times) >= bookingLengthBlocks:
 						# will change this later to add options for picking times?
 						# timeslots.append(times)
 
@@ -122,18 +120,18 @@ def fieldWrite(fieldID, keys):
 	field.clear()
 	field.send_keys(keys)
 
-
 print("running Auto Booker...")
 # hours in which to book a room
 firstSuitableBookTime = 10
 lastSuitableBookTime = 17
+bookingLengthBlocks = 8
 
 # open the log file for writing
 debugFile = open('log.txt', 'w')
 
 # login with provided details
-info = getLoginDetails('/home/roland/projects/login.json')
-login = info[0], secret = info[1]
+# /home/roland/projects/login.json
+login, secret = getLoginDetails('login.json')
 
 # for running headless
 options = Options()
@@ -142,96 +140,81 @@ options = Options()
 # options.add_argument('--no-sandbox')
 # options.add_argument('--window-size=1920,1080')
 
-browser = webdriver.Chrome(executable_path="webdriver/linux/chromedriver", options=options)
+browser = webdriver.Chrome(executable_path="webdriver/windows/chromedriver", options=options)
 browser.implicitly_wait(600)
+wait = WebDriverWait(browser, 10)
 
 # open login page
-printAndLog("going to login page", debugFile)
 browser.get("https://pcbooking.swin.edu.au/cire/login.aspx?ViewSimpleMode=false")
+printAndLog("going to login page", debugFile)
 
 # login
 printAndLog("writing username and secret", debugFile)
 fieldWrite("username", login)
 fieldWrite("password", secret)
 
+# signInButton
 printAndLog("clicking sign in button", debugFile)
-waitUntilElementLoaded("signInButton").click()
+waitUntilIDLoaded("signInButton").click()
 
 # verify we landed on the desktop page
 try:
 	checkPageTitle("Room and PC Booking")
 	waitUntilElementLoaded("locationTable")
-	f.write("landed on booking table\n")
+	printAndLog("landed on booking table", debugFile)
 except:
 	printAndLog("didnt land on the booking page", debugFile)
 
-
 # get a period of appropriate bookings
-printAndLog("attempting to extract booking data", debugFile)
 try:
 	timeslots = getBookings()
+	# get the room number at the end of the array then discard it
+	roomNum = timeslots[-1]
+	timeslots.pop()
+	printAndLog("Room number: " + str(roomNum), debugFile)
+	printAndLog("Timeslots: " + str(timeslots), debugFile)
 except:
 	printAndLog("ERROR: didnt get any bookings!", debugFile)
 
-# get the room number off the end of the array then discard it
-roomNum = timeslots[-1]
-printAndLog("Room number: " + roomNum, debugFile)
-timeslots.pop()
-printAndLog("Timeslots: " + str(timeslots), debugFile)
-
-# figure out the range of the booking for targeting the box to click on
+# form the alt text for the first booking
 query = str(timeslots[0]) + " to " + str(timeslots[1])
-printAndLog(query, debugFile)
 
 # get the box to click on
-print("get the row/box to click on")
-element = browser.find_element_by_xpath("//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
-f.write("got box to click on\n")
+try:
+	element = browser.find_element_by_xpath(
+		"//div[@id='bookingStrip" + str(roomNum) + "']/div[@alt='" + query + "']")
+except:
+	printAndLog("ERROR: Couldnt find booking box to click on", debugFile)
 
-# might need to scroll into view so it can be clicked on
-print("scroll into view")
-f.write("scrolling into view\n")
-actions = ActionChains(browser)
-actions.move_to_element(element).perform()
-element.location_once_scrolled_into_view
-
-print("clicking on timeslot")
-f.write("clicking on timeslot\n")
-element.click()
-
+# try and click on the element
+try:
+	# might need to scroll into view so it can be clicked on
+	actions = ActionChains(browser)
+	actions.move_to_element(element).perform()
+	element.location_once_scrolled_into_view
+	element.click()
+except:
+	printAndLog("ERROR: couldnt click on the booking", debugFile)
+	
 # wait a little while cos the floating book window is a little weird sometimes 
-print("waiting 10ms")
 browser.implicitly_wait(100)
 
 # get the end time field
-print("finding endtime dropdown")
-f.write("getting end time field\n")
-element = browser.find_element_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']")
-
-# select the last time from the dropdown
-print("selecting options")
-f.write("selecting options\n")
-options = Select(element)
-
-# select the last avaliable End Time slot on the booking window
-print("getting list of options")
-f.write("getting list of options\n")
-tmp = browser.find_elements_by_xpath("//div[@class = 'formFieldContent']/select[@name = 'endTime']/option")
-print("selecting last booking time")
-f.write("selecting last booking time\n")
-options.select_by_index(len(tmp) - 1)
+query = "// div[@class='formFieldContent']/select[@name='endTime']"
+select = Select(waitUntilXpathElementLoaded(query))
+select.select_by_visible_text(str(timeslots[-1]))
 
 # find and click the submit button
-print("getting the submit button")
-f.write("getting the submit button\n")
-browser.implicitly_wait(1000)
-wait = WebDriverWait(browser, 10)
-element = wait.until(EC.element_to_be_clickable((By.ID, 'submitButton')))
-waitUntilIDLoaded("submitButton")
-submitBtn = browser.find_element_by_id("submitButton")
-f.write("got the submit button\n")
-print("clicking the submit button")
-submitBtn.click()
-f.write("clicked book!\n")
+# waitUntilIDLoaded("submitButton")
+browser.implicitly_wait(5000)
+staleElement = True
+attempts = 0
+while (staleElement and attempts < 10):
+	try:
+		waitUntilXpathElementLoaded("//input[@id = 'submitButton']").click()
+		attempts += 1
+	except:
+		printAndLog("ERROR: Stale element. Retrying", debugFile)
 
-print("clicked book!")
+printAndLog("Clicked book!", debugFile)
+browser.quit()

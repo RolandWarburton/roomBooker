@@ -1,4 +1,0 @@
-open login page
-login username
-login password
-clicking sign in button
