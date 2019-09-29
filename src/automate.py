@@ -209,12 +209,13 @@ select.select_by_visible_text(str(timeslots[-1]))
 browser.implicitly_wait(5000)
 staleElement = True
 attempts = 0
-while (staleElement and attempts < 10):
+while (staleElement and attempts < 100):
 	try:
 		waitUntilXpathElementLoaded("//input[@id = 'submitButton']").click()
-		attempts += 1
 	except:
 		printAndLog("ERROR: Stale element. Retrying", debugFile)
+		attempts += 1
+		browser.implicitly_wait(5000)
 
 printAndLog("Clicked book!", debugFile)
 browser.quit()
